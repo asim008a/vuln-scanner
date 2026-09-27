@@ -1,0 +1,1039 @@
+{
+  "meta": {
+    "version": "2.0.0",
+    "total_rules": 161,
+    "categories": [
+      "code-execution", "injection", "authentication", "cryptography",
+      "secrets", "xss-client", "path-traversal", "deserialization",
+      "ssrf", "xxe", "prototype-pollution", "react-nextjs",
+      "express-node", "python", "java", "android",
+      "ai-vibe-coder", "infrastructure", "supply-chain"
+    ]
+  },
+  "patterns": [
+    {
+      "id": "CE_EVAL_USER_INPUT",
+      "category": "code-execution",
+      "name": "eval() with User-Controlled Input",
+      "severity": "critical",
+      "description": "eval() called with data from req, body, params, query — direct RCE vector.",
+      "regex": "eval\\s*\\(\\s*(req\\.|res\\.|body\\.|params\\.|query\\.|user\\.|input\\.|data\\.|payload\\.)"
+    },
+    {
+      "id": "CE_FUNCTION_CONSTRUCTOR",
+      "category": "code-execution",
+      "name": "Function Constructor Code Injection",
+      "severity": "critical",
+      "description": "new Function() with dynamic string — equivalent to eval(), executes arbitrary JS.",
+      "regex": "new\\s+Function\\s*\\([^)]*\\+|new\\s+Function\\s*\\(\\s*(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "CE_CHILD_PROCESS_TEMPLATE",
+      "category": "code-execution",
+      "name": "Shell Exec with Template Literal Injection",
+      "severity": "critical",
+      "description": "exec/execSync called with a template literal containing user variables — OS command injection.",
+      "regex": "(exec|execSync|spawn|spawnSync)\\s*\\(`[^`]*\\$\\{[^}]*(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "CE_CHILD_PROCESS_USER_INPUT",
+      "category": "code-execution",
+      "name": "child_process with User-Controlled Input",
+      "severity": "critical",
+      "description": "child_process methods called with req/query/body data — unambiguous RCE.",
+      "regex": "child_process[^;\\n]{0,200}(req\\.|body\\.|params\\.|query\\.|user\\.)"
+    },
+    {
+      "id": "CE_VM_USER_INPUT",
+      "category": "code-execution",
+      "name": "Node vm Module with User Input",
+      "severity": "critical",
+      "description": "vm.runInNewContext with user data — sandbox escape leads to RCE.",
+      "regex": "vm\\.(runInNewContext|runInThisContext|runInContext)\\s*\\([^)]*req\\."
+    },
+    {
+      "id": "CE_PYTHON_EXEC_USER",
+      "category": "code-execution",
+      "name": "Python exec()/eval() with User Input",
+      "severity": "critical",
+      "description": "exec() or eval() called with user-supplied data in Python — direct RCE.",
+      "regex": "(exec|eval)\\s*\\(\\s*(request\\.|form\\.|args\\.|data\\.|json\\.)"
+    },
+    {
+      "id": "CE_SUBPROCESS_SHELL_TRUE",
+      "category": "code-execution",
+      "name": "Python subprocess with shell=True",
+      "severity": "critical",
+      "description": "subprocess with shell=True — command injection if any part is user-controlled.",
+      "regex": "subprocess\\.(run|Popen|call|check_output)\\s*\\([^)]*shell\\s*=\\s*True"
+    },
+    {
+      "id": "CE_OS_SYSTEM_USER",
+      "category": "code-execution",
+      "name": "os.system() with Dynamic Input",
+      "severity": "critical",
+      "description": "os.system() with f-string or concatenation — OS command injection.",
+      "regex": "os\\.(system|popen)\\s*\\(\\s*(f['\"]|request\\.|args\\.|form\\.)"
+    },
+    {
+      "id": "INJ_SQL_TEMPLATE_LITERAL",
+      "category": "injection",
+      "name": "SQL Injection via Template Literal",
+      "severity": "critical",
+      "description": "SQL query built with template literal embedding user variables — parameterize all queries.",
+      "regex": "(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE)[^'\"`;]{0,100}\\$\\{[^}]*(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "INJ_SQL_CONCATENATION",
+      "category": "injection",
+      "name": "SQL Injection via String Concatenation",
+      "severity": "critical",
+      "description": "Raw SQL built with + operator and a variable — use parameterized queries.",
+      "regex": "(SELECT|INSERT|UPDATE|DELETE|DROP|UNION)['\"][^'\"]*['\"]\\s*\\+\\s*[a-zA-Z_$]"
+    },
+    {
+      "id": "INJ_SQL_FORMAT_STRING",
+      "category": "injection",
+      "name": "SQL Injection via Python Format String",
+      "severity": "critical",
+      "description": "Python %s / .format() used inside SQL query string.",
+      "regex": "(SELECT|INSERT|UPDATE|DELETE)[^\"'`\\n]{0,100}(%s|\\{[^}]*\\})"
+    },
+    {
+      "id": "INJ_NOSQL_USER_DATA",
+      "category": "injection",
+      "name": "NoSQL Injection via Unvalidated Request Data",
+      "severity": "critical",
+      "description": "MongoDB find/findOne receiving unvalidated req data — NoSQL injection.",
+      "regex": "(findOne|find)\\s*\\(\\s*\\{?\\s*[^}]{0,80}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "INJ_LDAP_USER_INPUT",
+      "category": "injection",
+      "name": "LDAP Injection Risk",
+      "severity": "high",
+      "description": "LDAP query constructed with user input — can bypass authentication.",
+      "regex": "(ldap|ldapjs|ActiveDirectory)[^;\\n]{0,150}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "INJ_XPATH_USER_INPUT",
+      "category": "injection",
+      "name": "XPath Injection Risk",
+      "severity": "high",
+      "description": "XPath expression built with user-controlled data — authentication bypass possible.",
+      "regex": "(xpath|selectNodes|evaluate)\\s*\\([^)]{0,150}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "INJ_LOG_USER_INPUT",
+      "category": "injection",
+      "name": "Log Injection with User Input",
+      "severity": "medium",
+      "description": "Logging user-controlled input directly — attacker can forge log entries.",
+      "regex": "(console\\.(log|error|warn)|logger\\.(info|error|warn|debug))\\s*\\([^)]{0,100}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "INJ_HEADER_USER_INPUT",
+      "category": "injection",
+      "name": "HTTP Response Header Injection",
+      "severity": "high",
+      "description": "User input placed directly into a response header — header splitting attacks.",
+      "regex": "res\\.setHeader\\s*\\([^)]{0,100}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "INJ_SSTI",
+      "category": "injection",
+      "name": "Server-Side Template Injection (SSTI)",
+      "severity": "critical",
+      "description": "Template engine render called with user-controlled template string — SSTI leads to RCE.",
+      "regex": "(res\\.render|ejs\\.render|nunjucks\\.renderString|Handlebars\\.compile|env\\.from_string)\\s*\\([^)]{0,80}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "INJ_REGEX_USER_INPUT",
+      "category": "injection",
+      "name": "Dynamic RegExp from User Input (ReDoS)",
+      "severity": "medium",
+      "description": "new RegExp() with user input — can trigger catastrophic backtracking to hang server.",
+      "regex": "new\\s+RegExp\\s*\\([^)]{0,80}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "AUTH_HARDCODED_PASSWORD",
+      "category": "authentication",
+      "name": "Hardcoded Password in Source",
+      "severity": "critical",
+      "description": "Password literal assigned directly in code — use environment variables.",
+      "regex": "(password|passwd|pwd)\\s*[=:]\\s*['\"][^'\"\\s]{6,}['\"]"
+    },
+    {
+      "id": "AUTH_JWT_HARDCODED_SECRET",
+      "category": "authentication",
+      "name": "Hardcoded JWT Secret",
+      "severity": "critical",
+      "description": "JWT secret is a literal string — tokens can be forged offline.",
+      "regex": "jwt\\.sign\\s*\\([^,]+,\\s*['\"][a-zA-Z0-9+/=_\\-]{8,}['\"]"
+    },
+    {
+      "id": "AUTH_JWT_ALG_NONE",
+      "category": "authentication",
+      "name": "JWT Algorithm: none Accepted",
+      "severity": "critical",
+      "description": "JWT verification allows algorithm:none — tokens accepted without signature.",
+      "regex": "algorithms?\\s*[=:]\\s*['\"]none['\"]"
+    },
+    {
+      "id": "AUTH_JWT_DECODE_NO_VERIFY",
+      "category": "authentication",
+      "name": "JWT Decoded Without Signature Verification",
+      "severity": "critical",
+      "description": "jwt.decode() instead of jwt.verify() — signature is never checked.",
+      "regex": "jwt\\.decode\\s*\\("
+    },
+    {
+      "id": "AUTH_BCRYPT_LOW_ROUNDS",
+      "category": "authentication",
+      "name": "bcrypt with Insufficient Salt Rounds",
+      "severity": "medium",
+      "description": "bcrypt saltRounds below 10 — hashes are cheap to crack.",
+      "regex": "bcrypt\\.(hash|genSalt)\\s*\\([^,)]+,\\s*[1-9]\\s*[,)]"
+    },
+    {
+      "id": "AUTH_PLAIN_TEXT_COMPARE",
+      "category": "authentication",
+      "name": "Plain-Text Password Comparison",
+      "severity": "critical",
+      "description": "Password compared with === instead of bcrypt.compare — implies plaintext storage.",
+      "regex": "(password|passwd|pwd)\\s*===?\\s*(req\\.|body\\.|params\\.|user\\.)"
+    },
+    {
+      "id": "AUTH_MD5_PASSWORD",
+      "category": "authentication",
+      "name": "MD5/SHA1 Used for Password Hashing",
+      "severity": "critical",
+      "description": "MD5/SHA1 are broken for password hashing — use bcrypt, scrypt, or argon2.",
+      "regex": "createHash\\s*\\(['\"]md5['\"]|createHash\\s*\\(['\"]sha1['\"]|hashlib\\.(md5|sha1)\\s*\\("
+    },
+    {
+      "id": "AUTH_SESSION_SECRET_HARDCODED",
+      "category": "authentication",
+      "name": "Hardcoded Express Session Secret",
+      "severity": "critical",
+      "description": "Session secret is a literal string — sessions can be forged.",
+      "regex": "session\\s*\\(\\s*\\{[^}]*secret\\s*:\\s*['\"][^'\"]{4,}['\"]"
+    },
+    {
+      "id": "AUTH_COOKIE_NO_HTTPONLY",
+      "category": "authentication",
+      "name": "Auth Cookie Without HttpOnly Flag",
+      "severity": "high",
+      "description": "Session/auth cookie without httpOnly — accessible from JavaScript.",
+      "regex": "res\\.cookie\\s*\\(['\"](?:session|token|auth|jwt)['\"][^)]+\\)(?!.*httpOnly\\s*:\\s*true)"
+    },
+    {
+      "id": "AUTH_COOKIE_NO_SECURE",
+      "category": "authentication",
+      "name": "Auth Cookie Without Secure Flag",
+      "severity": "high",
+      "description": "Auth cookie without Secure flag — sent over HTTP.",
+      "regex": "res\\.cookie\\s*\\(['\"](?:session|token|auth|jwt)['\"][^)]+\\)(?!.*secure\\s*:\\s*true)"
+    },
+    {
+      "id": "AUTH_ROLE_FROM_BODY",
+      "category": "authentication",
+      "name": "User Role / isAdmin Read from Request Body",
+      "severity": "critical",
+      "description": "Privilege controlled by client-supplied field — mass assignment attack.",
+      "regex": "req\\.body\\.(isAdmin|role|admin|privilege|is_admin|permissions|isSuperAdmin)"
+    },
+    {
+      "id": "AUTH_TIMING_UNSAFE_COMPARE",
+      "category": "authentication",
+      "name": "Token Compared Without Timing-Safe Method",
+      "severity": "medium",
+      "description": "=== comparison on HMAC/tokens is vulnerable to timing attacks — use crypto.timingSafeEqual.",
+      "regex": "(token|hmac|signature|apikey)\\s*===?\\s*(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "CRYPTO_MATH_RANDOM_SECURITY",
+      "category": "cryptography",
+      "name": "Math.random() for Security Token",
+      "severity": "high",
+      "description": "Math.random() is not cryptographically secure — use crypto.randomBytes() or crypto.randomUUID().",
+      "regex": "Math\\.random\\s*\\(\\s*\\)[^;\\n]{0,80}(token|secret|key|password|nonce|csrf|session|otp)"
+    },
+    {
+      "id": "CRYPTO_WEAK_ALGORITHM",
+      "category": "cryptography",
+      "name": "Broken Cipher Algorithm",
+      "severity": "high",
+      "description": "DES/3DES/RC4 are cryptographically broken — use AES-256-GCM.",
+      "regex": "\\b(DES|3DES|TripleDES|RC4|RC2|Blowfish)\\b"
+    },
+    {
+      "id": "CRYPTO_ECB_MODE",
+      "category": "cryptography",
+      "name": "AES-ECB Mode Used",
+      "severity": "high",
+      "description": "ECB mode leaks plaintext patterns — use AES-GCM or AES-CBC with random IV.",
+      "regex": "createCipheriv?\\s*\\(['\"]aes-[0-9]+-ecb['\"]"
+    },
+    {
+      "id": "CRYPTO_HARDCODED_IV",
+      "category": "cryptography",
+      "name": "Hardcoded Initialization Vector",
+      "severity": "high",
+      "description": "Static IV defeats CBC/CTR mode security — generate a fresh IV each time.",
+      "regex": "(iv|IV|initVector)\\s*[=:]\\s*['\"][a-fA-F0-9]{16,}['\"]"
+    },
+    {
+      "id": "CRYPTO_HARDCODED_ENC_KEY",
+      "category": "cryptography",
+      "name": "Hardcoded Encryption Key",
+      "severity": "critical",
+      "description": "Encryption key embedded as a string literal — any encrypted data can be decrypted.",
+      "regex": "(encryptionKey|enc_key|aes_key|cipher_key|symmetricKey)\\s*[=:]\\s*['\"][a-zA-Z0-9+/=\\-_]{16,}['\"]"
+    },
+    {
+      "id": "CRYPTO_SSL_VERIFY_DISABLED",
+      "category": "cryptography",
+      "name": "SSL/TLS Certificate Verification Disabled",
+      "severity": "critical",
+      "description": "Certificate verification disabled — all HTTPS connections are MITM-able.",
+      "regex": "(verify\\s*=\\s*False|rejectUnauthorized\\s*:\\s*false|NODE_TLS_REJECT_UNAUTHORIZED\\s*=\\s*['\"]0['\"])"
+    },
+    {
+      "id": "CRYPTO_TRUST_ALL_CERTS",
+      "category": "cryptography",
+      "name": "TrustAllCerts Disabled in Java/Android",
+      "severity": "critical",
+      "description": "Custom TrustManager accepts all certificates — all TLS is MITM-able.",
+      "regex": "(TrustAllX509TrustManager|ALLOW_ALL_HOSTNAME_VERIFIER|NullHostnameVerifier)"
+    },
+    {
+      "id": "CRYPTO_PYTHON_RANDOM",
+      "category": "cryptography",
+      "name": "Python random Module for Security Values",
+      "severity": "high",
+      "description": "random.randint/choice used for tokens — use the secrets module.",
+      "regex": "random\\.(random|randint|choice|choices|sample)\\s*\\([^)]{0,80}(token|password|secret|key|otp|nonce)"
+    },
+    {
+      "id": "SEC_AWS_ACCESS_KEY",
+      "category": "secrets",
+      "name": "AWS Access Key ID",
+      "severity": "critical",
+      "description": "AWS Access Key ID hardcoded in source.",
+      "regex": "AKIA[0-9A-Z]{16}"
+    },
+    {
+      "id": "SEC_AWS_SECRET_KEY",
+      "category": "secrets",
+      "name": "AWS Secret Access Key",
+      "severity": "critical",
+      "description": "AWS Secret Access Key in source — gives full API access.",
+      "regex": "(aws_secret_access_key|AWS_SECRET_ACCESS_KEY)\\s*[=:]\\s*['\"]?[a-zA-Z0-9/+]{40}['\"]?"
+    },
+    {
+      "id": "SEC_GITHUB_TOKEN",
+      "category": "secrets",
+      "name": "GitHub Personal Access Token",
+      "severity": "critical",
+      "description": "GitHub PAT detected.",
+      "regex": "gh[pousr]_[A-Za-z0-9_]{36,255}"
+    },
+    {
+      "id": "SEC_SLACK_TOKEN",
+      "category": "secrets",
+      "name": "Slack API Token",
+      "severity": "critical",
+      "description": "Slack bot or user token detected.",
+      "regex": "xox[baprs]-[0-9A-Za-z\\-]{10,}"
+    },
+    {
+      "id": "SEC_STRIPE_SECRET_KEY",
+      "category": "secrets",
+      "name": "Stripe Secret Key",
+      "severity": "critical",
+      "description": "Stripe sk_live_ or sk_test_ key detected.",
+      "regex": "sk_(live|test)_[0-9a-zA-Z]{24,}"
+    },
+    {
+      "id": "SEC_GOOGLE_API_KEY",
+      "category": "secrets",
+      "name": "Google API Key",
+      "severity": "high",
+      "description": "Google API key — may allow billing fraud.",
+      "regex": "AIza[0-9A-Za-z\\-_]{35}"
+    },
+    {
+      "id": "SEC_SENDGRID_KEY",
+      "category": "secrets",
+      "name": "SendGrid API Key",
+      "severity": "critical",
+      "description": "SendGrid API key detected.",
+      "regex": "SG\\.[a-zA-Z0-9_\\-]{22,}\\.[a-zA-Z0-9_\\-]{43,}"
+    },
+    {
+      "id": "SEC_PRIVATE_KEY_PEM",
+      "category": "secrets",
+      "name": "Private Key PEM Block",
+      "severity": "critical",
+      "description": "RSA/EC/OpenSSH private key embedded in source.",
+      "regex": "-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----"
+    },
+    {
+      "id": "SEC_DATABASE_URL_CREDS",
+      "category": "secrets",
+      "name": "Database Connection String with Credentials",
+      "severity": "critical",
+      "description": "Database URL with username:password — use environment variables.",
+      "regex": "(mongodb|postgresql|postgres|mysql|redis|mssql):\\/\\/[a-zA-Z0-9_\\-]+:[^@\\s]{4,}@"
+    },
+    {
+      "id": "SEC_GENERIC_SECRET",
+      "category": "secrets",
+      "name": "Generic Secret / API Key Hardcoded",
+      "severity": "high",
+      "description": "Secret variable assigned a string literal — store in environment variables.",
+      "regex": "(api_key|api_secret|client_secret|access_token|auth_token|signing_key)\\s*[=:]\\s*['\"][a-zA-Z0-9+/=\\-_]{12,}['\"]"
+    },
+    {
+      "id": "SEC_DISCORD_TOKEN",
+      "category": "secrets",
+      "name": "Discord Bot Token",
+      "severity": "critical",
+      "description": "Discord bot token — full control over the bot account.",
+      "regex": "[MN][a-zA-Z0-9]{23}\\.[a-zA-Z0-9_\\-]{6}\\.[a-zA-Z0-9_\\-]{27}"
+    },
+    {
+      "id": "SEC_NEXTAUTH_SECRET",
+      "category": "secrets",
+      "name": "NextAuth Secret Hardcoded",
+      "severity": "critical",
+      "description": "NEXTAUTH_SECRET as literal string — session tokens can be forged.",
+      "regex": "NEXTAUTH_SECRET\\s*[=:]\\s*['\"][^'\"\\s]{6,}['\"]"
+    },
+    {
+      "id": "XSS_INNERHTML_VARIABLE",
+      "category": "xss-client",
+      "name": "XSS via innerHTML with Variable",
+      "severity": "high",
+      "description": "innerHTML assigned a variable — XSS sink if user-controlled.",
+      "regex": "\\.innerHTML\\s*=\\s*(?!['\"`]<[a-zA-Z])[^;\\n]*[a-zA-Z_$][a-zA-Z0-9_$]*"
+    },
+    {
+      "id": "XSS_DOCUMENT_WRITE",
+      "category": "xss-client",
+      "name": "XSS via document.write with Variable",
+      "severity": "high",
+      "description": "document.write() with a variable renders arbitrary HTML/JS if user-controlled.",
+      "regex": "document\\.write\\s*\\([^)]*[a-zA-Z_$][a-zA-Z0-9_$]*[^)]*\\)"
+    },
+    {
+      "id": "XSS_OPEN_REDIRECT_LOCATION",
+      "category": "xss-client",
+      "name": "Open Redirect via location Assignment",
+      "severity": "high",
+      "description": "window.location set from URL params — open redirect or DOM-based XSS.",
+      "regex": "(window\\.location|location\\.href|location\\.replace)\\s*=\\s*[^;'\"\\n]{0,60}(params|query|hash|search|url|redirect|next)"
+    },
+    {
+      "id": "XSS_LOCALSTORAGE_TOKEN",
+      "category": "xss-client",
+      "name": "Auth Token in localStorage",
+      "severity": "high",
+      "description": "Storing JWTs in localStorage — accessible to any XSS payload. Use httpOnly cookies.",
+      "regex": "localStorage\\.setItem\\s*\\([^)]{0,80}(token|jwt|auth|session|access_token)"
+    },
+    {
+      "id": "XSS_JAVASCRIPT_URI",
+      "category": "xss-client",
+      "name": "href with javascript: Protocol",
+      "severity": "critical",
+      "description": "javascript: URI in href executes script.",
+      "regex": "href\\s*=\\s*['\"]javascript:"
+    },
+    {
+      "id": "XSS_REACT_DANGEROUS_HTML",
+      "category": "xss-client",
+      "name": "dangerouslySetInnerHTML in React",
+      "severity": "high",
+      "description": "dangerouslySetInnerHTML bypasses React XSS protections — only safe with DOMPurify-sanitized content.",
+      "regex": "dangerouslySetInnerHTML\\s*=\\s*\\{\\s*\\{\\s*__html\\s*:"
+    },
+    {
+      "id": "XSS_CORS_CREDENTIALS_WILDCARD",
+      "category": "xss-client",
+      "name": "CORS Wildcard with Credentials",
+      "severity": "high",
+      "description": "Origin:* with credentials — enables CSRF from any origin.",
+      "regex": "Access-Control-Allow-Origin[^\\n]{0,50}\\*"
+    },
+    {
+      "id": "PT_READFILE_USER_INPUT",
+      "category": "path-traversal",
+      "name": "Path Traversal via readFile with User Input",
+      "severity": "critical",
+      "description": "fs.readFile with user-controlled path — attacker can read arbitrary files.",
+      "regex": "(readFile|readFileSync|createReadStream)\\s*\\([^)]{0,80}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "PT_WRITEFILE_USER_INPUT",
+      "category": "path-traversal",
+      "name": "Arbitrary File Write with User Input",
+      "severity": "critical",
+      "description": "fs.writeFile with user-controlled filename — can overwrite any file.",
+      "regex": "(writeFile|writeFileSync|appendFile|createWriteStream)\\s*\\([^)]{0,80}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "PT_PATH_JOIN_USER",
+      "category": "path-traversal",
+      "name": "path.join with Unvalidated User Input",
+      "severity": "high",
+      "description": "path.join alone does NOT prevent traversal — use path.resolve + prefix validation.",
+      "regex": "path\\.(join|resolve)\\s*\\([^)]{0,120}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "PT_MULTER_NO_FILTER",
+      "category": "path-traversal",
+      "name": "Multer Upload Without fileFilter",
+      "severity": "high",
+      "description": "multer() without fileFilter — any file type including web shells can be uploaded.",
+      "regex": "multer\\s*\\(\\s*\\{(?!.*fileFilter)[^}]{0,200}\\}"
+    },
+    {
+      "id": "PT_PYTHON_OPEN_USER",
+      "category": "path-traversal",
+      "name": "Python open() with User-Controlled Path",
+      "severity": "critical",
+      "description": "open() called with request data — reads/writes arbitrary files.",
+      "regex": "open\\s*\\([^)]{0,80}(request\\.|form\\.|args\\.|data\\.)"
+    },
+    {
+      "id": "DESER_PICKLE_LOADS",
+      "category": "deserialization",
+      "name": "Python pickle.loads()",
+      "severity": "critical",
+      "description": "pickle.loads on untrusted data executes arbitrary Python code.",
+      "regex": "pickle\\.(loads?|Unpickler)\\s*\\("
+    },
+    {
+      "id": "DESER_YAML_UNSAFE",
+      "category": "deserialization",
+      "name": "Python yaml.load() Without SafeLoader",
+      "severity": "critical",
+      "description": "yaml.load() without SafeLoader deserializes arbitrary Python objects.",
+      "regex": "yaml\\.load\\s*\\((?!.*SafeLoader)"
+    },
+    {
+      "id": "DESER_JAVA_OBJECT_INPUT",
+      "category": "deserialization",
+      "name": "Java ObjectInputStream Deserialization",
+      "severity": "critical",
+      "description": "Java native deserialization — RCE via gadget chains.",
+      "regex": "new\\s+ObjectInputStream\\s*\\("
+    },
+    {
+      "id": "DESER_JAVA_XMLDECODER",
+      "category": "deserialization",
+      "name": "Java XMLDecoder Deserialization",
+      "severity": "critical",
+      "description": "XMLDecoder can execute arbitrary Java — never use with untrusted input.",
+      "regex": "new\\s+XMLDecoder\\s*\\("
+    },
+    {
+      "id": "DESER_NODE_SERIALIZE",
+      "category": "deserialization",
+      "name": "node-serialize with User Input",
+      "severity": "critical",
+      "description": "node-serialize.unserialize() allows IIFE injection — direct RCE.",
+      "regex": "(unserialize|deserialize)\\s*\\([^)]{0,80}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "SSRF_FETCH_USER_URL",
+      "category": "ssrf",
+      "name": "fetch() with User-Controlled URL",
+      "severity": "critical",
+      "description": "fetch called with URL from user input — SSRF to internal services or cloud metadata.",
+      "regex": "(fetch|axios\\.(get|post|put|delete))\\s*\\([^)]{0,120}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "SSRF_HTTP_GET_USER",
+      "category": "ssrf",
+      "name": "Node http.get with User URL",
+      "severity": "critical",
+      "description": "Native HTTP client with user-controlled URL — SSRF.",
+      "regex": "(https?)\\.get\\s*\\([^)]{0,80}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "SSRF_REDIRECT_USER",
+      "category": "ssrf",
+      "name": "Open Redirect via res.redirect",
+      "severity": "high",
+      "description": "res.redirect() with user-controlled URL — open redirect and SSRF.",
+      "regex": "res\\.redirect\\s*\\([^)]{0,80}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "SSRF_PYTHON_REQUESTS",
+      "category": "ssrf",
+      "name": "Python requests with User-Controlled URL",
+      "severity": "critical",
+      "description": "requests called with URL from user input — SSRF.",
+      "regex": "requests\\.(get|post|put|delete|head)\\s*\\([^)]{0,80}(request\\.|form\\.|args\\.)"
+    },
+    {
+      "id": "XXE_DOCUMENTBUILDER",
+      "category": "xxe",
+      "name": "Java DocumentBuilderFactory Without XXE Protection",
+      "severity": "critical",
+      "description": "DocumentBuilderFactory without disabling external entities — XXE reads arbitrary files.",
+      "regex": "DocumentBuilderFactory\\.newInstance\\s*\\(\\s*\\)"
+    },
+    {
+      "id": "XXE_SAXPARSER",
+      "category": "xxe",
+      "name": "Java SAXParser Without Secure Processing",
+      "severity": "critical",
+      "description": "SAXParserFactory without secure processing — XXE injection.",
+      "regex": "SAXParserFactory\\.newInstance\\s*\\(\\s*\\)"
+    },
+    {
+      "id": "XXE_PYTHON_XML",
+      "category": "xxe",
+      "name": "Python xml.etree Without defusedxml",
+      "severity": "high",
+      "description": "Parsing XML with stdlib xml.etree — use defusedxml instead.",
+      "regex": "xml\\.etree\\.ElementTree|from\\s+xml\\.etree"
+    },
+    {
+      "id": "PROTO_PROTO_ASSIGNMENT",
+      "category": "prototype-pollution",
+      "name": "Direct __proto__ Assignment",
+      "severity": "critical",
+      "description": "Assigning to __proto__ pollutes Object.prototype.",
+      "regex": "\\.__proto__\\s*="
+    },
+    {
+      "id": "PROTO_CONSTRUCTOR_PROTOTYPE",
+      "category": "prototype-pollution",
+      "name": "constructor.prototype Assignment",
+      "severity": "critical",
+      "description": "Modifying constructor.prototype from user keys pollutes the prototype chain.",
+      "regex": "\\.constructor\\.prototype\\s*="
+    },
+    {
+      "id": "PROTO_OBJECT_ASSIGN_USER",
+      "category": "prototype-pollution",
+      "name": "Object.assign with User Input",
+      "severity": "high",
+      "description": "Object.assign merging user-controlled object — prototype pollution via __proto__ key.",
+      "regex": "Object\\.assign\\s*\\(\\s*(\\{\\}|target|obj|config)[^)]{0,80}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "PROTO_LODASH_MERGE_USER",
+      "category": "prototype-pollution",
+      "name": "lodash _.merge with User Input",
+      "severity": "high",
+      "description": "Recursive merge with user input — prototype pollution via __proto__ key.",
+      "regex": "_\\.(merge|mergeWith|defaultsDeep)\\s*\\([^)]{0,80}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "NEXT_PUBLIC_SECRET",
+      "category": "react-nextjs",
+      "name": "NEXT_PUBLIC_ on Secret Variable",
+      "severity": "critical",
+      "description": "NEXT_PUBLIC_ variables are bundled into the client — never use for secrets.",
+      "regex": "NEXT_PUBLIC_[A-Z_]*(SECRET|KEY|TOKEN|PASSWORD|PRIVATE|AUTH)"
+    },
+    {
+      "id": "NEXT_API_NO_AUTH",
+      "category": "react-nextjs",
+      "name": "Next.js API Route Without Auth Guard",
+      "severity": "high",
+      "description": "API route handler with no session/token check — may be publicly accessible.",
+      "regex": "export\\s+(default\\s+)?async\\s+function\\s+(handler|POST|GET|PUT|DELETE|PATCH)\\s*\\(req[^)]*\\)\\s*\\{(?!.*session|.*token|.*auth|.*verify)"
+    },
+    {
+      "id": "NEXT_SERVER_ACTION_NO_AUTH",
+      "category": "react-nextjs",
+      "name": "Next.js Server Action Without Auth",
+      "severity": "high",
+      "description": "Server Action writing to DB without auth check — any client can trigger it.",
+      "regex": "'use server'[^}]{0,400}(create|update|delete|insert|remove)(?!.*session|.*auth|.*user)"
+    },
+    {
+      "id": "REACT_HREF_USER_DATA",
+      "category": "react-nextjs",
+      "name": "React href with User-Controlled Value",
+      "severity": "high",
+      "description": "href from user data — javascript: URIs lead to XSS.",
+      "regex": "<a[^>]{0,80}href\\s*=\\s*\\{[^}]{0,80}(user\\.|props\\.|data\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "NEXT_COOKIES_NO_OPTIONS",
+      "category": "react-nextjs",
+      "name": "Next.js cookies().set() Without Security Options",
+      "severity": "medium",
+      "description": "Auth cookie without httpOnly/secure — exposed to JS and HTTP.",
+      "regex": "cookies\\(\\)\\.set\\s*\\([^)]+\\)(?!.*httpOnly|.*secure)"
+    },
+    {
+      "id": "EXPRESS_REFLECT_INPUT",
+      "category": "express-node",
+      "name": "Request Body Reflected in Response",
+      "severity": "high",
+      "description": "res.send/json with req.body directly — reflected XSS or data leak.",
+      "regex": "res\\.(send|json)\\s*\\([^)]{0,80}(req\\.body|req\\.params|req\\.query)"
+    },
+    {
+      "id": "EXPRESS_ERROR_STACK",
+      "category": "express-node",
+      "name": "Error Stack Trace Sent to Client",
+      "severity": "high",
+      "description": "Sending error.stack to client — leaks file paths and library versions.",
+      "regex": "res\\.(send|json)\\s*\\([^)]{0,80}(err\\.stack|error\\.stack|e\\.stack)"
+    },
+    {
+      "id": "EXPRESS_CORS_REFLECT_ORIGIN",
+      "category": "express-node",
+      "name": "CORS Reflecting Request Origin",
+      "severity": "high",
+      "description": "Reflecting incoming Origin header without a whitelist — any origin gets CORS access.",
+      "regex": "Access-Control-Allow-Origin[^\\n]{0,50}req\\.headers\\.origin"
+    },
+    {
+      "id": "NODE_REQUIRE_USER_PATH",
+      "category": "express-node",
+      "name": "Dynamic require() with User Input",
+      "severity": "critical",
+      "description": "require() with user input path — loads arbitrary modules.",
+      "regex": "require\\s*\\([^)]{0,80}(req\\.|body\\.|params\\.|query\\.)"
+    },
+    {
+      "id": "NODE_BODY_NO_LIMIT",
+      "category": "express-node",
+      "name": "express.json() Without Size Limit",
+      "severity": "medium",
+      "description": "express.json() without a limit option — vulnerable to JSON body DoS.",
+      "regex": "express\\.json\\s*\\(\\s*\\)"
+    },
+    {
+      "id": "PY_FLASK_DEBUG_TRUE",
+      "category": "python",
+      "name": "Flask debug=True",
+      "severity": "critical",
+      "description": "Flask debug mode exposes Werkzeug debugger — full RCE via browser.",
+      "regex": "app\\.run\\s*\\([^)]*debug\\s*=\\s*True"
+    },
+    {
+      "id": "PY_DJANGO_DEBUG_TRUE",
+      "category": "python",
+      "name": "Django DEBUG = True",
+      "severity": "high",
+      "description": "Django DEBUG exposes stack traces and settings to users.",
+      "regex": "^\\s*DEBUG\\s*=\\s*True"
+    },
+    {
+      "id": "PY_DJANGO_SECRET_HARDCODED",
+      "category": "python",
+      "name": "Django SECRET_KEY Hardcoded",
+      "severity": "critical",
+      "description": "Django SECRET_KEY as literal — sessions and CSRF tokens can be forged.",
+      "regex": "SECRET_KEY\\s*=\\s*['\"][^'\"\\s]{20,}['\"]"
+    },
+    {
+      "id": "PY_ASSERT_AUTH",
+      "category": "python",
+      "name": "assert Used for Auth Check",
+      "severity": "high",
+      "description": "assert is stripped with python -O — auth checks silently bypassed.",
+      "regex": "assert\\s+(user\\.is_authenticated|is_admin|has_permission|request\\.user)"
+    },
+    {
+      "id": "PY_JINJA2_AUTOESCAPE_OFF",
+      "category": "python",
+      "name": "Jinja2 Autoescape Disabled",
+      "severity": "high",
+      "description": "autoescape=False — template variables unescaped, enabling XSS.",
+      "regex": "Environment\\s*\\([^)]*autoescape\\s*=\\s*False"
+    },
+    {
+      "id": "PY_HASHLIB_PASSWORD",
+      "category": "python",
+      "name": "hashlib for Password Hashing",
+      "severity": "critical",
+      "description": "hashlib without PBKDF2/salt is unsuitable for passwords — use bcrypt or argon2.",
+      "regex": "hashlib\\.(md5|sha1|sha256|sha512)\\s*\\([^)]{0,80}(password|passwd|pwd)"
+    },
+    {
+      "id": "PY_REQUESTS_VERIFY_FALSE",
+      "category": "python",
+      "name": "Python requests with verify=False",
+      "severity": "critical",
+      "description": "TLS verification disabled — all HTTPS requests are MITM-able.",
+      "regex": "requests\\.(get|post|put|delete|session)\\s*\\([^)]*verify\\s*=\\s*False"
+    },
+    {
+      "id": "JAVA_STATEMENT_SQLI",
+      "category": "java",
+      "name": "Java Statement SQL Injection",
+      "severity": "critical",
+      "description": "Statement with string concatenation — SQL injection. Use PreparedStatement.",
+      "regex": "createStatement\\s*\\(\\s*\\)[^;\\n]{0,200}execute(Query|Update)\\s*\\([^)]{0,200}\\+"
+    },
+    {
+      "id": "JAVA_RUNTIME_EXEC",
+      "category": "java",
+      "name": "Java Runtime.exec() with User Data",
+      "severity": "critical",
+      "description": "Runtime.exec() with user data — OS command injection.",
+      "regex": "(Runtime\\.getRuntime\\(\\)\\.exec|new\\s+ProcessBuilder)\\s*\\([^)]{0,200}(request\\.|getParameter)"
+    },
+    {
+      "id": "JAVA_LOG4J_JNDI",
+      "category": "java",
+      "name": "Log4Shell — JNDI Lookup Pattern (CVE-2021-44228)",
+      "severity": "critical",
+      "description": "JNDI injection pattern in log input — Log4Shell RCE.",
+      "regex": "\\$\\{jndi:(ldap|rmi|dns|iiop)://"
+    },
+    {
+      "id": "JAVA_WEAK_RANDOM",
+      "category": "java",
+      "name": "java.util.Random for Security Context",
+      "severity": "high",
+      "description": "java.util.Random is predictable — use java.security.SecureRandom.",
+      "regex": "new\\s+Random\\s*\\(\\s*\\)[^;\\n]{0,150}(token|password|secret|nonce|key|session)"
+    },
+    {
+      "id": "JAVA_INSECURE_COOKIE",
+      "category": "java",
+      "name": "Java Cookie Without Secure Flag",
+      "severity": "high",
+      "description": "Cookie without setSecure(true) — sent over HTTP.",
+      "regex": "new\\s+Cookie\\s*\\([^)]+\\)(?![^;]{0,300}setSecure\\s*\\(\\s*true\\s*\\))"
+    },
+    {
+      "id": "AND_WEBVIEW_JAVASCRIPT",
+      "category": "android",
+      "name": "WebView JavaScript Enabled",
+      "severity": "high",
+      "description": "setJavaScriptEnabled(true) — XSS risk if loading untrusted URLs.",
+      "regex": "setJavaScriptEnabled\\s*\\(\\s*true\\s*\\)"
+    },
+    {
+      "id": "AND_WEBVIEW_JS_INTERFACE",
+      "category": "android",
+      "name": "WebView addJavascriptInterface",
+      "severity": "critical",
+      "description": "addJavascriptInterface exposes Java to WebView JS — remote page can call any public method.",
+      "regex": "addJavascriptInterface\\s*\\("
+    },
+    {
+      "id": "AND_EXPORTED_NO_PERMISSION",
+      "category": "android",
+      "name": "Android Component Exported Without Permission",
+      "severity": "high",
+      "description": "android:exported=true without permission — any app can interact with this component.",
+      "regex": "android:exported\\s*=\\s*[\"']true[\"'](?![^<]{0,200}android:permission)"
+    },
+    {
+      "id": "AND_DEBUGGABLE_TRUE",
+      "category": "android",
+      "name": "android:debuggable=true",
+      "severity": "high",
+      "description": "Debuggable APK — ADB shell access on non-rooted devices.",
+      "regex": "android:debuggable\\s*=\\s*[\"']true[\"']"
+    },
+    {
+      "id": "AND_CLEARTEXT_TRAFFIC",
+      "category": "android",
+      "name": "Android usesCleartextTraffic=true",
+      "severity": "high",
+      "description": "App allows plain HTTP — all traffic is cleartext.",
+      "regex": "android:usesCleartextTraffic\\s*=\\s*[\"']true[\"']"
+    },
+    {
+      "id": "AND_WORLD_READABLE",
+      "category": "android",
+      "name": "World-Readable File Mode",
+      "severity": "high",
+      "description": "MODE_WORLD_READABLE — other apps can read this app's files.",
+      "regex": "(MODE_WORLD_READABLE|MODE_WORLD_WRITEABLE)"
+    },
+    {
+      "id": "AND_SHAREDPREF_CREDS",
+      "category": "android",
+      "name": "Credentials in SharedPreferences",
+      "severity": "high",
+      "description": "Passwords/tokens in SharedPreferences — plaintext on rooted devices.",
+      "regex": "SharedPreferences[^;\\n]{0,200}\\.putString\\s*\\([^)]{0,80}(password|token|secret|key|pin|credential)"
+    },
+    {
+      "id": "AND_LOG_SENSITIVE",
+      "category": "android",
+      "name": "Android Log.* with Sensitive Data",
+      "severity": "medium",
+      "description": "Logging passwords/tokens — visible via adb logcat.",
+      "regex": "Log\\.[deiw]\\s*\\([^)]{0,120}(password|token|secret|key|credential)"
+    },
+    {
+      "id": "VIBE_TODO_AUTH",
+      "category": "ai-vibe-coder",
+      "name": "TODO: Auth Not Implemented",
+      "severity": "critical",
+      "description": "Auth marked as TODO — endpoint is live and unprotected in production.",
+      "regex": "(TODO|FIXME|HACK|XXX)[^\\n]{0,60}(auth|authentication|authorize|verify|protect|middleware|token|login)"
+    },
+    {
+      "id": "VIBE_SKIP_AUTH_COMMENT",
+      "category": "ai-vibe-coder",
+      "name": "Auth Check Bypassed in Comment",
+      "severity": "critical",
+      "description": "Auth logic explicitly skipped with a comment — common in AI-generated scaffold code.",
+      "regex": "(\\/\\/|#)[^\\n]{0,40}(skip|disable|remove|bypass|commented)[^\\n]{0,40}(auth|jwt|token|verify|middleware)"
+    },
+    {
+      "id": "VIBE_CONSOLE_LOG_SECRETS",
+      "category": "ai-vibe-coder",
+      "name": "console.log of Sensitive Data",
+      "severity": "high",
+      "description": "Logging passwords/tokens — leaks to monitoring and browser devtools.",
+      "regex": "console\\.(log|error|warn|debug)\\s*\\([^)]{0,80}(password|passwd|token|secret|apiKey|api_key|jwt|credential)"
+    },
+    {
+      "id": "VIBE_DEV_BYPASS",
+      "category": "ai-vibe-coder",
+      "name": "isDev / isLocal Auth Bypass",
+      "severity": "critical",
+      "description": "Auth gate bypassed when isDev/isLocal — misconfigured env skips all security.",
+      "regex": "if\\s*\\(?\\s*(isDev|isLocal|isTest|dev_mode)\\s*\\)?"
+    },
+    {
+      "id": "VIBE_RETURN_TRUE_AUTH",
+      "category": "ai-vibe-coder",
+      "name": "Auth Function Always Returns True",
+      "severity": "critical",
+      "description": "Auth function only returns true — placeholder that was never completed.",
+      "regex": "(isAuth|checkAuth|verifyToken|hasPermission|isAuthorized)\\s*[=({][^}]{0,60}return\\s+true[^}]{0,20}\\}"
+    },
+    {
+      "id": "VIBE_HARDCODED_ADMIN_EMAIL",
+      "category": "ai-vibe-coder",
+      "name": "Admin by Hardcoded Email Check",
+      "severity": "high",
+      "description": "Admin access by comparing against a hardcoded email — brittle and exposes admin account.",
+      "regex": "(email|username)\\s*===?\\s*['\"][^'\"@\\s]+@[^'\"\\s]+['\"]"
+    },
+    {
+      "id": "VIBE_EMPTY_CATCH_SECURITY",
+      "category": "ai-vibe-coder",
+      "name": "Empty catch Block",
+      "severity": "high",
+      "description": "Empty catch on security operations silently swallows errors — auth bypass by forcing exceptions.",
+      "regex": "\\}\\s*catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}"
+    },
+    {
+      "id": "VIBE_SENSITIVE_IN_URL",
+      "category": "ai-vibe-coder",
+      "name": "Sensitive Data in URL Query String",
+      "severity": "high",
+      "description": "Password/token in URL params — logged by servers, proxies, and browsers.",
+      "regex": "(\\?|&)(password|token|secret|otp|key|apikey|api_key)=[^&\\s'\"]{4,}"
+    },
+    {
+      "id": "VIBE_UNVALIDATED_ENV_SECRET",
+      "category": "ai-vibe-coder",
+      "name": "process.env Secret Without Existence Check",
+      "severity": "medium",
+      "description": "JWT_SECRET/SESSION_SECRET used without || or ?? — undefined makes auth bypassable.",
+      "regex": "process\\.env\\.(JWT_SECRET|SECRET_KEY|API_SECRET|TOKEN_SECRET|SESSION_SECRET)(?![^;\\n]{0,30}(\\|\\||\\?\\?))"
+    },
+    {
+      "id": "VIBE_MOCK_AUTH_MIDDLEWARE",
+      "category": "ai-vibe-coder",
+      "name": "Auth Middleware That Only Calls next()",
+      "severity": "critical",
+      "description": "Middleware calling next() unconditionally — placeholder auth never finished.",
+      "regex": "(authMiddleware|authenticate|requireAuth|verifyJWT)\\s*=\\s*(req|function)[^{]{0,40}\\{[^}]{0,80}next\\s*\\(\\s*\\)[^}]{0,40}\\}"
+    },
+    {
+      "id": "INFRA_BIND_ALL_INTERFACES",
+      "category": "infrastructure",
+      "name": "Server Bound to 0.0.0.0",
+      "severity": "medium",
+      "description": "Binding to 0.0.0.0 exposes the service on all network interfaces.",
+      "regex": "(listen|bind|host)\\s*[=:(,]\\s*['\"]0\\.0\\.0\\.0['\"]"
+    },
+    {
+      "id": "INFRA_DOCKER_PRIVILEGED",
+      "category": "infrastructure",
+      "name": "Docker --privileged Flag",
+      "severity": "critical",
+      "description": "Running container with --privileged — trivial container escape.",
+      "regex": "--privileged(?!\\s*=\\s*false)"
+    },
+    {
+      "id": "INFRA_S3_PUBLIC_ACL",
+      "category": "infrastructure",
+      "name": "S3 Bucket with Public-Read ACL",
+      "severity": "critical",
+      "description": "S3 ACL public-read — all data publicly accessible.",
+      "regex": "(ACL|acl)\\s*[=:]\\s*['\"]public-read"
+    },
+    {
+      "id": "INFRA_IAM_WILDCARD",
+      "category": "infrastructure",
+      "name": "IAM Policy Wildcard Action (*)",
+      "severity": "high",
+      "description": "IAM Action:* grants full permissions — follow least privilege.",
+      "regex": "[\"']Action[\"']\\s*:\\s*[\"']\\*[\"']"
+    },
+    {
+      "id": "INFRA_HARDCODED_PUBLIC_IP",
+      "category": "infrastructure",
+      "name": "Hardcoded Public IP Address",
+      "severity": "low",
+      "description": "Hardcoded non-RFC1918 IP — likely a debug/dev endpoint left in production.",
+      "regex": "\\b(?!127\\.0\\.0\\.1)(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\b"
+    },
+    {
+      "id": "INFRA_HTTP_NON_LOCALHOST",
+      "category": "infrastructure",
+      "name": "Plaintext HTTP URL to External Host",
+      "severity": "medium",
+      "description": "HTTP to an external host — traffic is unencrypted.",
+      "regex": "http:\\/\\/(?!localhost|127\\.0\\.0\\.1)[a-zA-Z0-9][a-zA-Z0-9.\\-]{2,}[a-zA-Z0-9]\\/"
+    },
+    {
+      "id": "INFRA_REDIS_NO_AUTH",
+      "category": "infrastructure",
+      "name": "Redis Connection Without Password",
+      "severity": "high",
+      "description": "Redis client without auth — any client can read all data if port is exposed.",
+      "regex": "(createClient|new\\s+Redis)\\s*\\(\\s*\\{[^}]{0,200}\\}\\s*\\)(?!.*password)"
+    },
+    {
+      "id": "SC_REQUIRE_HTTP_URL",
+      "category": "supply-chain",
+      "name": "require() from HTTP URL",
+      "severity": "critical",
+      "description": "Loading a module from an HTTP URL — RCE if URL is compromised.",
+      "regex": "(require|import)\\s*\\(['\"]http:\\/\\/"
+    },
+    {
+      "id": "SC_CURL_PIPE_BASH",
+      "category": "supply-chain",
+      "name": "curl/wget Piped to Shell",
+      "severity": "critical",
+      "description": "Downloading and executing a remote script — supply chain attack vector.",
+      "regex": "(curl|wget)[^|\\n]{0,100}\\|[^|\\n]{0,30}(bash|sh|zsh|python|ruby)"
+    },
+    {
+      "id": "SC_POSTINSTALL_NETWORK",
+      "category": "supply-chain",
+      "name": "package.json postinstall with Network Call",
+      "severity": "high",
+      "description": "postinstall making network calls — executes during npm install.",
+      "regex": "[\"']postinstall[\"']\\s*:[^,\\n]{0,150}(curl|wget|fetch|http|https)"
+    }
+  ]
+}
